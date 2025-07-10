@@ -29,6 +29,7 @@
             position: relative;
             font-size: 11px;
             color: #333;
+            transition: background-color 0.3s ease;
         }
         
         .time-slot.past {
@@ -41,6 +42,7 @@
         
         .time-slot.current {
             background-color: #ffd700;
+            box-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
         }
         
         .time-label {
@@ -56,6 +58,7 @@
             top: 0;
             height: 100%;
             border-radius: 3px;
+            transition: width 0.5s ease;
         }
         
         .time-slot.past .progress-fill {
@@ -77,6 +80,7 @@
             right: 6px;
             font-size: 10px;
             color: #666;
+            font-weight: 500;
         }
         
         .header {
@@ -125,93 +129,31 @@
         .legend-color.current {
             background-color: #ffb700;
         }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
-    <div class="header">今日时间进度</div>
+    <div class="header">
+        <span class="live-indicator"></span>实时时间进度
+    </div>
     
-    <div class="time-progress-container">
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">05:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">06:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">07:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">08:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">09:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">10:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">11:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">12:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">13:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">14:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">15:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">16:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">17:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">18:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">19:00</div>
-        </div>
-        <div class="time-slot past">
-            <div class="progress-fill"></div>
-            <div class="time-label">20:00</div>
-        </div>
-        <div class="time-slot current">
-            <div class="progress-fill" style="width: 45%;"></div>
-            <div class="time-label">21:00</div>
-            <div class="current-time-indicator">21:27</div>
-        </div>
-        <div class="time-slot future">
-            <div class="progress-fill"></div>
-            <div class="time-label">22:00</div>
-        </div>
-        <div class="time-slot future">
-            <div class="progress-fill"></div>
-            <div class="time-label">23:00</div>
-        </div>
-        <div class="time-slot future">
-            <div class="progress-fill"></div>
-            <div class="time-label">24:00</div>
-        </div>
+    <div class="time-progress-container" id="timeContainer">
+        <!-- 时间槽位将通过JavaScript动态生成 -->
     </div>
     
     <div class="legend">
@@ -230,7 +172,121 @@
     </div>
     
     <div class="footer">
-        更新时间: 21:27
+        更新时间: <span id="updateTime"></span>
     </div>
+
+    <script>
+        function createTimeProgress() {
+            const container = document.getElementById('timeContainer');
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 生成从5点到24点的时间槽位
+            for (let hour = 5; hour <= 24; hour++) {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
+                
+                const progressFill = document.createElement('div');
+                progressFill.className = 'progress-fill';
+                
+                const currentTimeIndicator = document.createElement('div');
+                currentTimeIndicator.className = 'current-time-indicator';
+                
+                // 计算时间状态
+                const slotStartMinutes = hour * 60;
+                const slotEndMinutes = (hour + 1) * 60;
+                
+                if (hour === 24) {
+                    // 24点特殊处理
+                    if (currentTimeInMinutes >= slotStartMinutes) {
+                        timeSlot.classList.add('past');
+                        progressFill.style.width = '100%';
+                    } else {
+                        timeSlot.classList.add('future');
+                        progressFill.style.width = '0%';
+                    }
+                } else {
+                    if (currentTimeInMinutes >= slotEndMinutes) {
+                        // 完全过去的时间
+                        timeSlot.classList.add('past');
+                        progressFill.style.width = '100%';
+                    } else if (currentTimeInMinutes >= slotStartMinutes) {
+                        // 当前时间槽位
+                        timeSlot.classList.add('current');
+                        const progress = ((currentTimeInMinutes - slotStartMinutes) / 60) * 100;
+                        progressFill.style.width = `${progress}%`;
+                        currentTimeIndicator.textContent = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+                    } else {
+                        // 未来的时间
+                        timeSlot.classList.add('future');
+                        progressFill.style.width = '0%';
+                    }
+                }
+                
+                timeSlot.appendChild(progressFill);
+                timeSlot.appendChild(timeLabel);
+                timeSlot.appendChild(currentTimeIndicator);
+                container.appendChild(timeSlot);
+            }
+            
+            // 更新时间
+            document.getElementById('updateTime').textContent = now.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 初始化
+        createTimeProgress();
+        
+        // 每分钟更新一次
+        setInterval(createTimeProgress, 60000);
+        
+        // 页面可见时更新
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                createTimeProgress();
+            }
+        });
+        
+        // 每10秒更新一次当前时间显示（只更新当前时间槽位）
+        setInterval(function() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+            
+            // 更新当前时间槽位的进度
+            const currentSlot = document.querySelector('.time-slot.current');
+            if (currentSlot) {
+                const progressFill = currentSlot.querySelector('.progress-fill');
+                const currentTimeIndicator = currentSlot.querySelector('.current-time-indicator');
+                
+                if (progressFill && currentTimeIndicator) {
+                    const slotStartMinutes = currentHour * 60;
+                    const progress = ((currentTimeInMinutes - slotStartMinutes) / 60) * 100;
+                    progressFill.style.width = `${progress}%`;
+                    currentTimeIndicator.textContent = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+                }
+            }
+            
+            // 更新时间显示
+            document.getElementById('updateTime').textContent = now.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }, 10000);
+    </script>
 </body>
 </html> 
