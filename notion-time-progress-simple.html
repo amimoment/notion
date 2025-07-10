@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间进度</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #ffffff;
+            line-height: 1.4;
+        }
+        
+        .time-progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        
+        .time-slot {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            border-radius: 3px;
+            position: relative;
+            font-size: 11px;
+            color: #333;
+        }
+        
+        .time-slot.past {
+            background-color: #e0e0e0;
+        }
+        
+        .time-slot.future {
+            background-color: #f5f5dc;
+        }
+        
+        .time-slot.current {
+            background-color: #ffd700;
+        }
+        
+        .time-label {
+            position: absolute;
+            left: 6px;
+            font-weight: 500;
+            z-index: 1;
+        }
+        
+        .progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .time-slot.past .progress-fill {
+            background-color: #a0a0a0;
+            width: 100%;
+        }
+        
+        .time-slot.future .progress-fill {
+            background-color: #e8e8d0;
+            width: 0%;
+        }
+        
+        .time-slot.current .progress-fill {
+            background-color: #ffb700;
+        }
+        
+        .current-time-indicator {
+            position: absolute;
+            right: 6px;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 10px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">今日时间进度</div>
+    
+    <div class="time-progress-container" id="timeContainer">
+        <!-- 时间槽位将通过JavaScript动态生成 -->
+    </div>
+    
+    <div class="footer">
+        更新时间: <span id="updateTime"></span>
+    </div>
+
+    <script>
+        function createTimeProgress() {
+            const container = document.getElementById('timeContainer');
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 生成从5点到24点的时间槽位
+            for (let hour = 5; hour <= 24; hour++) {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
+                
+                const progressFill = document.createElement('div');
+                progressFill.className = 'progress-fill';
+                
+                const currentTimeIndicator = document.createElement('div');
+                currentTimeIndicator.className = 'current-time-indicator';
+                
+                // 计算时间状态
+                const slotStartMinutes = hour * 60;
+                const slotEndMinutes = (hour + 1) * 60;
+                
+                if (hour === 24) {
+                    // 24点特殊处理
+                    if (currentTimeInMinutes >= slotStartMinutes) {
+                        timeSlot.classList.add('past');
+                    } else {
+                        timeSlot.classList.add('future');
+                    }
+                } else {
+                    if (currentTimeInMinutes >= slotEndMinutes) {
+                        // 完全过去的时间
+                        timeSlot.classList.add('past');
+                    } else if (currentTimeInMinutes >= slotStartMinutes) {
+                        // 当前时间槽位
+                        timeSlot.classList.add('current');
+                        const progress = ((currentTimeInMinutes - slotStartMinutes) / 60) * 100;
+                        progressFill.style.width = `${progress}%`;
+                        currentTimeIndicator.textContent = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+                    } else {
+                        // 未来的时间
+                        timeSlot.classList.add('future');
+                    }
+                }
+                
+                timeSlot.appendChild(progressFill);
+                timeSlot.appendChild(timeLabel);
+                timeSlot.appendChild(currentTimeIndicator);
+                container.appendChild(timeSlot);
+            }
+            
+            // 更新时间
+            document.getElementById('updateTime').textContent = now.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 初始化
+        createTimeProgress();
+        
+        // 每分钟更新一次
+        setInterval(createTimeProgress, 60000);
+    </script>
+</body>
+</html> 
